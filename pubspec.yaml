@@ -1,0 +1,38 @@
+name: elecpro
+description: Electric Work Manager - manage workers, clients, jobs and pay.
+publish_to: 'none'
+version: 1.0.0+1
+
+environment:
+  sdk: '>=3.0.0 <4.0.0'
+
+dependencies:
+  flutter:
+    sdk: flutter
+
+  # Firebase
+  firebase_core: ^4.10.0
+  firebase_auth: ^6.5.2
+  cloud_firestore: ^6.5.0
+
+  # Biometric auth
+  local_auth: ^2.1.8
+
+  # State management
+  provider: ^6.1.1
+
+  # UI
+  google_fonts: ^6.1.0
+  flutter_animate: ^4.3.0
+
+  # Utils
+  intl: ^0.18.1
+  uuid: ^4.2.2
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^3.0.1
+
+flutter:
+  uses-material-design: true
