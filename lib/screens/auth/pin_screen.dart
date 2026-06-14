@@ -12,40 +12,29 @@ class PinScreen extends StatefulWidget {
 }
 
 class _PinScreenState extends State<PinScreen> {
-  final _emailCtrl = TextEditingController();
-  final _passCtrl  = TextEditingController();
-  bool _obscure    = true;
-  bool _loading    = false;
+  bool _loading = false;
 
-  Future<void> _login() async {
-    if (_emailCtrl.text.isEmpty || _passCtrl.text.isEmpty) return;
+  Future<void> _tryBiometric() async {
     setState(() => _loading = true);
 
     final auth = context.read<AuthProvider>();
-    final ok = await auth.loginWithEmail(_emailCtrl.text, _passCtrl.text);
+    final ok   = await auth.loginWithBiometric();
 
     if (mounted) {
       setState(() => _loading = false);
-      if (!ok && auth.errorMessage != null) {
+      if (!ok) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text(auth.errorMessage!),
+            content: Text(auth.errorMessage ?? 'Authentication failed'),
             backgroundColor: AppColors.danger,
             behavior: SnackBarBehavior.floating,
             shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(12),
-            ),
+                borderRadius: BorderRadius.circular(12)),
           ),
         );
       }
+      // on success the router in main.dart navigates automatically
     }
-  }
-
-  @override
-  void dispose() {
-    _emailCtrl.dispose();
-    _passCtrl.dispose();
-    super.dispose();
   }
 
   @override
@@ -59,88 +48,40 @@ class _PinScreenState extends State<PinScreen> {
               color: Colors.white54, size: 18),
           onPressed: () => Navigator.pop(context),
         ),
-        title: Text(
-          'Sign In',
-          style: AppText.heading(18),
-        ),
+        title: Text('Unlock', style: AppText.heading(18)),
       ),
-      body: Padding(
-        padding: const EdgeInsets.all(24),
+      body: Center(
         child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
+          mainAxisSize: MainAxisSize.min,
           children: [
+            Icon(Icons.fingerprint_rounded,
+                size: 80,
+                color: AppColors.primary.withOpacity(0.8)),
             const SizedBox(height: 20),
-
-            // Email field
-            Text('EMAIL', style: AppText.label),
-            const SizedBox(height: 8),
-            TextField(
-              controller: _emailCtrl,
-              keyboardType: TextInputType.emailAddress,
-              style: const TextStyle(color: Colors.white),
-              decoration: const InputDecoration(
-                hintText: 'you@example.com',
-                prefixIcon: Icon(Icons.email_outlined,
-                    color: Colors.white30, size: 18),
-              ),
-            ),
-
-            const SizedBox(height: 20),
-
-            // Password field
-            Text('PASSWORD', style: AppText.label),
-            const SizedBox(height: 8),
-            TextField(
-              controller: _passCtrl,
-              obscureText: _obscure,
-              style: const TextStyle(color: Colors.white),
-              decoration: InputDecoration(
-                hintText: '••••••••',
-                prefixIcon: const Icon(Icons.lock_outline_rounded,
-                    color: Colors.white30, size: 18),
-                suffixIcon: IconButton(
-                  icon: Icon(
-                    _obscure
-                        ? Icons.visibility_outlined
-                        : Icons.visibility_off_outlined,
-                    color: Colors.white30,
-                    size: 18,
-                  ),
-                  onPressed: () => setState(() => _obscure = !_obscure),
-                ),
-              ),
-            ),
-
-            const SizedBox(height: 36),
-
-            // Login button
+            const Text('Use your fingerprint to unlock',
+                style: TextStyle(
+                    fontSize: 14, color: AppColors.textMuted)),
+            const SizedBox(height: 32),
             SizedBox(
-              width: double.infinity,
-              child: ElevatedButton(
-                onPressed: _loading ? null : _login,
+              width: 200,
+              child: ElevatedButton.icon(
+                onPressed: _loading ? null : _tryBiometric,
+                icon: _loading
+                    ? const SizedBox(
+                        width: 16, height: 16,
+                        child: CircularProgressIndicator(
+                            strokeWidth: 2, color: Colors.black))
+                    : const Icon(Icons.fingerprint_rounded, size: 18),
+                label: Text(_loading ? 'Scanning…' : 'Try Again'),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: AppColors.primary,
                   foregroundColor: Colors.black,
-                  padding: const EdgeInsets.symmetric(vertical: 16),
+                  padding: const EdgeInsets.symmetric(vertical: 14),
                   shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(14),
-                  ),
+                      borderRadius: BorderRadius.circular(14)),
+                  textStyle: const TextStyle(
+                      fontWeight: FontWeight.w700, fontSize: 14),
                 ),
-                child: _loading
-                    ? const SizedBox(
-                        width: 20, height: 20,
-                        child: CircularProgressIndicator(
-                          strokeWidth: 2,
-                          color: Colors.black,
-                        ),
-                      )
-                    : const Text(
-                        'Sign In',
-                        style: TextStyle(
-                          fontWeight: FontWeight.w700,
-                          fontSize: 15,
-                        ),
-                      ),
               ),
             ),
           ],

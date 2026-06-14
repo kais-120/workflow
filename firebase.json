@@ -1,1 +1,28 @@
-{"flutter":{"platforms":{"android":{"default":{"projectId":"workflow-6fdac","appId":"1:490052731843:android:ac70b831570e91b43bb376","fileOutput":"android/app/google-services.json"}},"dart":{"lib/firebase_options.dart":{"projectId":"workflow-6fdac","configurations":{"android":"1:490052731843:android:ac70b831570e91b43bb376","ios":"1:490052731843:ios:f67ec1442114d4243bb376","web":"1:490052731843:web:bea8127aad1457f53bb376","windows":"1:490052731843:web:b4b9b5f37d45526d3bb376"}}}}}}
+{
+  "flutter": {
+    "platforms": {
+      "android": {
+        "default": {
+          "projectId": "workflow-6fdac",
+          "appId": "1:490052731843:android:ac70b831570e91b43bb376",
+          "fileOutput": "android/app/google-services.json"
+        }
+      },
+      "dart": {
+        "lib/firebase_options.dart": {
+          "projectId": "workflow-6fdac",
+          "configurations": {
+            "android": "1:490052731843:android:ac70b831570e91b43bb376",
+            "ios": "1:490052731843:ios:f67ec1442114d4243bb376",
+            "web": "1:490052731843:web:bea8127aad1457f53bb376",
+            "windows": "1:490052731843:web:b4b9b5f37d45526d3bb376"
+          }
+        }
+      }
+    }
+  },
+  "firestore": {
+    "rules": "firestore.rules",
+    "indexes": "firestore.indexes.json"
+  }
+}

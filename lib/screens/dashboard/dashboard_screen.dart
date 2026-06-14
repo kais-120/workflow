@@ -22,8 +22,6 @@ class DashboardScreen extends StatefulWidget {
 
 class _DashboardScreenState extends State<DashboardScreen> {
   int _navIndex = 0;
-
-  // Pages wired to bottom nav
   late final List<Widget> _pages;
 
   @override
@@ -41,10 +39,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppColors.bg,
-      body: IndexedStack(
-        index: _navIndex,
-        children: _pages,
-      ),
+      body: IndexedStack(index: _navIndex, children: _pages),
       bottomNavigationBar: ElecBottomNav(
         currentIndex: _navIndex,
         onTap: (i) => setState(() => _navIndex = i),
@@ -78,42 +73,39 @@ class _HomeTab extends StatelessWidget {
           child: ListView(
             padding: const EdgeInsets.fromLTRB(20, 16, 20, 20),
             children: [
-              // ── Top bar ──────────────────────
               _buildTopBar(context),
               const SizedBox(height: 20),
 
-              // ── Stats row ────────────────────
+              // Stats
               FutureBuilder<Map<String, dynamic>>(
                 future: fs.getDashboardStats(),
                 builder: (ctx, snap) {
                   final data = snap.data;
-                  return Row(
-                    children: [
-                      StatCard(
-                        value: '${data?['activeJobs'] ?? '-'}',
-                        label: 'Active Jobs',
-                        color: AppColors.primary,
-                      ),
-                      const SizedBox(width: 8),
-                      StatCard(
-                        value: '${data?['totalWorkers'] ?? '-'}',
-                        label: 'Workers',
-                        color: AppColors.info,
-                      ),
-                      const SizedBox(width: 8),
-                      StatCard(
-                        value: '${data?['totalClients'] ?? '-'}',
-                        label: 'Clients',
-                        color: AppColors.success,
-                      ),
-                    ],
-                  );
+                  return Row(children: [
+                    StatCard(
+                      value: '${data?['activeJobs'] ?? '-'}',
+                      label: 'Active Jobs',
+                      color: AppColors.primary,
+                    ),
+                    const SizedBox(width: 8),
+                    StatCard(
+                      value: '${data?['totalWorkers'] ?? '-'}',
+                      label: 'Workers',
+                      color: AppColors.info,
+                    ),
+                    const SizedBox(width: 8),
+                    StatCard(
+                      value: '${data?['totalClients'] ?? '-'}',
+                      label: 'Clients',
+                      color: AppColors.success,
+                    ),
+                  ]);
                 },
               ),
 
               const SizedBox(height: 14),
 
-              // ── Earnings card ─────────────────
+              // Earnings
               FutureBuilder<Map<String, dynamic>>(
                 future: fs.getDashboardStats(),
                 builder: (ctx, snap) =>
@@ -122,7 +114,6 @@ class _HomeTab extends StatelessWidget {
 
               const SizedBox(height: 18),
 
-              // ── Active jobs ──────────────────
               SectionHeader(
                 title: 'Active Jobs',
                 actionLabel: 'See all',
@@ -169,32 +160,22 @@ class _HomeTab extends StatelessWidget {
   }
 
   Widget _buildTopBar(BuildContext context) {
-    final auth = context.read<AuthProvider>();
-    final user = auth.user;
-    final initials = user?.email?.substring(0, 1).toUpperCase() ?? 'M';
-
+    // ✅ Option B: no Firebase user — use static avatar label
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
-        Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              _greeting(),
+        Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+          Text(_greeting(),
               style: const TextStyle(
-                fontSize: 12,
-                color: AppColors.textMuted,
-              ),
-            ),
-            const SizedBox(height: 2),
-            Text('Manager', style: AppText.heading(18)),
-          ],
-        ),
+                  fontSize: 12, color: AppColors.textMuted)),
+          const SizedBox(height: 2),
+          Text('Manager', style: AppText.heading(18)),
+        ]),
         GestureDetector(
           onTap: () => _showProfileMenu(context),
-          child: GradientAvatar(
-            label: initials,
-            colors: const [AppColors.primary, AppColors.secondary],
+          child: const GradientAvatar(
+            label: 'M',
+            colors: [AppColors.primary, AppColors.secondary],
             size: 38,
             fontSize: 16,
           ),
@@ -219,31 +200,26 @@ class _HomeTab extends StatelessWidget {
       ),
       builder: (_) => Padding(
         padding: const EdgeInsets.all(24),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Container(
+        child: Column(mainAxisSize: MainAxisSize.min, children: [
+          Container(
               width: 36, height: 4,
               decoration: BoxDecoration(
-                color: Colors.white12,
-                borderRadius: BorderRadius.circular(4),
-              ),
-            ),
-            const SizedBox(height: 20),
-            Text('Account', style: AppText.heading(16)),
-            const SizedBox(height: 20),
-            ListTile(
-              leading: const Icon(Icons.logout_rounded,
-                  color: AppColors.danger),
-              title: const Text('Sign Out',
-                  style: TextStyle(color: AppColors.danger)),
-              onTap: () {
-                Navigator.pop(context);
-                context.read<AuthProvider>().signOut();
-              },
-            ),
-          ],
-        ),
+                  color: Colors.white12,
+                  borderRadius: BorderRadius.circular(4))),
+          const SizedBox(height: 20),
+          Text('Account', style: AppText.heading(16)),
+          const SizedBox(height: 20),
+          ListTile(
+            leading: const Icon(Icons.logout_rounded,
+                color: AppColors.danger),
+            title: const Text('Sign Out',
+                style: TextStyle(color: AppColors.danger)),
+            onTap: () {
+              Navigator.pop(context);
+              context.read<AuthProvider>().signOut();
+            },
+          ),
+        ]),
       ),
     );
   }
@@ -258,7 +234,7 @@ class _EarningsCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final fmt = NumberFormat('#,##0.00', 'fr_TN');
+    final fmt     = NumberFormat('#,##0.00', 'fr_TN');
     final total   = data?['totalEarnings'] as double? ?? 0;
     final paid    = data?['totalPaid']     as double? ?? 0;
     final pending = data?['totalPending']  as double? ?? 0;
@@ -266,74 +242,50 @@ class _EarningsCard extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        gradient: LinearGradient(
+        gradient: const LinearGradient(
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
-          colors: [
-            const Color(0xFF1C1200),
-            const Color(0xFF1A0800),
-          ],
+          colors: [Color(0xFF1C1200), Color(0xFF1A0800)],
         ),
         borderRadius: BorderRadius.circular(16),
         border: Border.all(color: AppColors.primary.withOpacity(0.2)),
       ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              const Text(
-                'This Month — Earnings',
-                style: TextStyle(fontSize: 11, color: AppColors.textMuted),
-              ),
-              Container(
-                padding: const EdgeInsets.symmetric(
-                    horizontal: 8, vertical: 3),
-                decoration: BoxDecoration(
-                  color: AppColors.success.withOpacity(0.12),
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: const Text(
-                  '↑ +12%',
-                  style: TextStyle(
+      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+        Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
+          const Text('This Month — Earnings',
+              style: TextStyle(fontSize: 11, color: AppColors.textMuted)),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+            decoration: BoxDecoration(
+              color: AppColors.success.withOpacity(0.12),
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: const Text('↑ +12%',
+                style: TextStyle(
                     fontSize: 9,
                     color: AppColors.success,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-              ),
-            ],
+                    fontWeight: FontWeight.w600)),
           ),
-          const SizedBox(height: 6),
-          Text(
-            '${fmt.format(total)} DT',
+        ]),
+        const SizedBox(height: 6),
+        Text('${fmt.format(total)} DT',
             style: GoogleFonts.syne(
-              fontSize: 26,
-              fontWeight: FontWeight.w800,
-              color: AppColors.primary,
-            ),
-          ),
-          const SizedBox(height: 10),
-          const Divider(color: Color(0x14FFFFFF)),
-          const SizedBox(height: 8),
-          Row(
-            children: [
-              _EarnStat(
-                label: 'Paid',
-                value: '${fmt.format(paid)} DT',
-                color: AppColors.success,
-              ),
-              const SizedBox(width: 20),
-              _EarnStat(
-                label: 'Pending',
-                value: '${fmt.format(pending)} DT',
-                color: AppColors.danger,
-              ),
-            ],
-          ),
-        ],
-      ),
+                fontSize: 26,
+                fontWeight: FontWeight.w800,
+                color: AppColors.primary)),
+        const SizedBox(height: 10),
+        const Divider(color: Color(0x14FFFFFF)),
+        const SizedBox(height: 8),
+        Row(children: [
+          _EarnStat(label: 'Paid',
+              value: '${fmt.format(paid)} DT',
+              color: AppColors.success),
+          const SizedBox(width: 20),
+          _EarnStat(label: 'Pending',
+              value: '${fmt.format(pending)} DT',
+              color: AppColors.danger),
+        ]),
+      ]),
     );
   }
 }
@@ -341,37 +293,27 @@ class _EarningsCard extends StatelessWidget {
 class _EarnStat extends StatelessWidget {
   final String label, value;
   final Color color;
-
-  const _EarnStat({
-    required this.label,
-    required this.value,
-    required this.color,
-  });
+  const _EarnStat(
+      {required this.label, required this.value, required this.color});
 
   @override
-  Widget build(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          value,
-          style: GoogleFonts.syne(
-            fontSize: 14,
-            fontWeight: FontWeight.w700,
-            color: color,
-          ),
-        ),
-        Text(
-          label,
-          style: const TextStyle(fontSize: 9, color: AppColors.textMuted),
-        ),
-      ],
-    );
-  }
+  Widget build(BuildContext context) => Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(value,
+              style: GoogleFonts.syne(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w700,
+                  color: color)),
+          Text(label,
+              style: const TextStyle(
+                  fontSize: 9, color: AppColors.textMuted)),
+        ],
+      );
 }
 
 // ─────────────────────────────────────────────
-//  Job card on dashboard
+//  Job card
 // ─────────────────────────────────────────────
 class _JobCard extends StatelessWidget {
   final JobModel job;
@@ -387,68 +329,48 @@ class _JobCard extends StatelessWidget {
         borderRadius: BorderRadius.circular(14),
         border: Border.all(color: AppColors.border),
       ),
-      child: Row(
-        children: [
-          // Icon
-          Container(
-            width: 36, height: 36,
-            decoration: BoxDecoration(
-              color: AppColors.primary.withOpacity(0.12),
-              borderRadius: BorderRadius.circular(10),
-            ),
-            child: const Center(
-              child: Text('⚡', style: TextStyle(fontSize: 16)),
-            ),
+      child: Row(children: [
+        Container(
+          width: 36, height: 36,
+          decoration: BoxDecoration(
+            color: AppColors.primary.withOpacity(0.12),
+            borderRadius: BorderRadius.circular(10),
           ),
-          const SizedBox(width: 12),
-
-          // Info
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  job.title,
+          child: const Center(
+              child: Text('⚡', style: TextStyle(fontSize: 16))),
+        ),
+        const SizedBox(width: 12),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(job.title,
                   style: const TextStyle(
                     fontSize: 12,
                     color: AppColors.textPrimary,
                     fontWeight: FontWeight.w500,
                   ),
                   maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                ),
-                const SizedBox(height: 3),
-                Text(
-                  '${job.workerIds.length} workers · Day ${job.currentDay} of ${job.totalDays}',
-                  style: const TextStyle(
-                    fontSize: 10,
-                    color: AppColors.textMuted,
-                  ),
-                ),
-                const SizedBox(height: 6),
-                // Progress bar
-                ClipRRect(
-                  borderRadius: BorderRadius.circular(4),
-                  child: LinearProgressIndicator(
-                    value: job.progressPercent,
-                    backgroundColor: Colors.white10,
-                    valueColor: const AlwaysStoppedAnimation(AppColors.primary),
-                    minHeight: 3,
-                  ),
-                ),
-              ],
-            ),
+                  overflow: TextOverflow.ellipsis),
+              const SizedBox(height: 3),
+              Text(
+                '${job.workerIds.length} workers · ${job.address}',
+                style: const TextStyle(
+                    fontSize: 10, color: AppColors.textMuted),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              ),
+            ],
           ),
-          const SizedBox(width: 10),
-
-          StatusBadge(
-            label: job.status == JobStatus.active ? 'Active' : 'Done',
-            color: job.status == JobStatus.active
-                ? AppColors.primary
-                : AppColors.success,
-          ),
-        ],
-      ),
+        ),
+        const SizedBox(width: 10),
+        StatusBadge(
+          label: job.status == JobStatus.active ? 'Active' : 'Done',
+          color: job.status == JobStatus.active
+              ? AppColors.primary
+              : AppColors.success,
+        ),
+      ]),
     );
   }
 }

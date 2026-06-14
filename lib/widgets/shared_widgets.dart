@@ -271,10 +271,10 @@ class ElecBottomNav extends StatelessWidget {
   });
 
   static const _items = [
-    _NavItem(icon: Icons.home_rounded, label: 'الصفحة الرئيسبة'),
-    _NavItem(icon: Icons.engineering_rounded, label: 'خدّامة'),
-    _NavItem(icon: Icons.people_alt_rounded, label: 'كليونات'),
-    _NavItem(icon: Icons.payments_rounded, label: 'الدفع'),
+    _NavItem(icon: Icons.home_rounded, label: 'Home'),
+    _NavItem(icon: Icons.engineering_rounded, label: 'Workers'),
+    _NavItem(icon: Icons.people_alt_rounded, label: 'Clients'),
+    _NavItem(icon: Icons.payments_rounded, label: 'Pay'),
   ];
 
   @override

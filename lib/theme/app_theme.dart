@@ -13,6 +13,7 @@ class AppColors {
   static const primary   = Color(0xFFF5A623);   // electric yellow
   static const secondary = Color(0xFFE74C3C);   // red accent
   static const success   = Color(0xFF00D68F);
+  static const warning   = Color.fromARGB(255, 255, 246, 74);
   static const danger    = Color(0xFFFF4D6D);
   static const info      = Color(0xFF4D9FFF);
 

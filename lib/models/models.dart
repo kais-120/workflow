@@ -1,11 +1,49 @@
-// lib/models/worker_model.dart
+// lib/models/models.dart
 import 'package:cloud_firestore/cloud_firestore.dart';
 
+// ─────────────────────────────────────────────
+// Day type enum — admin selects per worker per day
+// ─────────────────────────────────────────────
+enum DayType {
+  fullDay,    // 1.0  × dailyRate
+  halfDay,    // 0.5  × dailyRate
+  dayAndHalf, // 1.5  × dailyRate
+}
+
+extension DayTypeExt on DayType {
+  double get multiplier {
+    switch (this) {
+      case DayType.fullDay:    return 1.0;
+      case DayType.halfDay:    return 0.5;
+      case DayType.dayAndHalf: return 1.5;
+    }
+  }
+
+  String get label {
+    switch (this) {
+      case DayType.fullDay:    return 'Full Day';
+      case DayType.halfDay:    return 'Half Day';
+      case DayType.dayAndHalf: return 'Day & Half';
+    }
+  }
+
+  String get shortLabel {
+    switch (this) {
+      case DayType.fullDay:    return '1 day';
+      case DayType.halfDay:    return '½ day';
+      case DayType.dayAndHalf: return '1½ day';
+    }
+  }
+}
+
+// ─────────────────────────────────────────────
+// WorkerModel — dailyRate (DT/day)
+// ─────────────────────────────────────────────
 class WorkerModel {
   final String id;
   final String name;
-  final String role;       // "Electrician" | "Technician" | "Helper"
-  final double dailyRate;  // DT/day
+  final String role;
+  final double dailyRate; // DT per full day
   final String? currentJobId;
   final bool isActive;
   final DateTime createdAt;
@@ -44,8 +82,8 @@ class WorkerModel {
 }
 
 // ─────────────────────────────────────────────
-// lib/models/client_model.dart
-
+// ClientModel
+// ─────────────────────────────────────────────
 class ClientModel {
   final String id;
   final String name;
@@ -81,20 +119,17 @@ class ClientModel {
 }
 
 // ─────────────────────────────────────────────
-// lib/models/job_model.dart
-
+// JobModel — no budget/totalDays, uses clientName + startDate as label
+// ─────────────────────────────────────────────
 enum JobStatus { active, completed, paused }
 
 class JobModel {
   final String id;
-  final String title;
+  final String title;       // kept for internal use but not shown in UI
   final String clientId;
   final String clientName;
   final String address;
   final JobStatus status;
-  final double budget;
-  final int totalDays;
-  final int currentDay;
   final List<String> workerIds;
   final DateTime startDate;
   final DateTime? endDate;
@@ -106,32 +141,35 @@ class JobModel {
     required this.clientName,
     required this.address,
     required this.status,
-    required this.budget,
-    required this.totalDays,
-    required this.currentDay,
     required this.workerIds,
     required this.startDate,
     this.endDate,
   });
 
+  /// Display label: "Client Name · dd/MM/yyyy"
+  String get displayLabel {
+    final d = startDate;
+    final day   = d.day.toString().padLeft(2, '0');
+    final month = d.month.toString().padLeft(2, '0');
+    final year  = d.year.toString();
+    return '$clientName · $day/$month/$year';
+  }
+
   factory JobModel.fromFirestore(DocumentSnapshot doc) {
     final d = doc.data() as Map<String, dynamic>;
     return JobModel(
-      id:          doc.id,
-      title:       d['title']       ?? '',
-      clientId:    d['clientId']    ?? '',
-      clientName:  d['clientName']  ?? '',
-      address:     d['address']     ?? '',
-      status:      JobStatus.values.firstWhere(
+      id:         doc.id,
+      title:      d['title']      ?? '',
+      clientId:   d['clientId']   ?? '',
+      clientName: d['clientName'] ?? '',
+      address:    d['address']    ?? '',
+      status: JobStatus.values.firstWhere(
         (e) => e.name == (d['status'] ?? 'active'),
         orElse: () => JobStatus.active,
       ),
-      budget:      (d['budget']     ?? 0).toDouble(),
-      totalDays:   d['totalDays']   ?? 0,
-      currentDay:  d['currentDay']  ?? 0,
-      workerIds:   List<String>.from(d['workerIds'] ?? []),
-      startDate:   (d['startDate'] as Timestamp).toDate(),
-      endDate:     d['endDate'] != null
+      workerIds: List<String>.from(d['workerIds'] ?? []),
+      startDate: (d['startDate'] as Timestamp).toDate(),
+      endDate:   d['endDate'] != null
           ? (d['endDate'] as Timestamp).toDate()
           : null,
     );
@@ -143,26 +181,21 @@ class JobModel {
     'clientName': clientName,
     'address':    address,
     'status':     status.name,
-    'budget':     budget,
-    'totalDays':  totalDays,
-    'currentDay': currentDay,
     'workerIds':  workerIds,
     'startDate':  Timestamp.fromDate(startDate),
     'endDate':    endDate != null ? Timestamp.fromDate(endDate!) : null,
   };
-
-  double get progressPercent =>
-      totalDays > 0 ? (currentDay / totalDays).clamp(0.0, 1.0) : 0.0;
 }
 
 // ─────────────────────────────────────────────
-// lib/models/attendance_model.dart
-
+// AttendanceModel — stores dayType instead of hours
+// ─────────────────────────────────────────────
 class AttendanceModel {
   final String id;
   final String jobId;
   final String workerId;
   final DateTime date;
+  final DayType dayType;   // fullDay / halfDay / dayAndHalf
   final bool present;
 
   AttendanceModel({
@@ -170,16 +203,24 @@ class AttendanceModel {
     required this.jobId,
     required this.workerId,
     required this.date,
+    required this.dayType,
     required this.present,
   });
+
+  /// Days equivalent (e.g. 0.5, 1.0, 1.5)
+  double get daysValue => present ? dayType.multiplier : 0.0;
 
   factory AttendanceModel.fromFirestore(DocumentSnapshot doc) {
     final d = doc.data() as Map<String, dynamic>;
     return AttendanceModel(
       id:       doc.id,
-      jobId:    d['jobId']   ?? '',
-      workerId: d['workerId']?? '',
+      jobId:    d['jobId']    ?? '',
+      workerId: d['workerId'] ?? '',
       date:     (d['date'] as Timestamp).toDate(),
+      dayType:  DayType.values.firstWhere(
+        (e) => e.name == (d['dayType'] ?? 'fullDay'),
+        orElse: () => DayType.fullDay,
+      ),
       present:  d['present'] ?? false,
     );
   }
@@ -188,13 +229,14 @@ class AttendanceModel {
     'jobId':    jobId,
     'workerId': workerId,
     'date':     Timestamp.fromDate(date),
+    'dayType':  dayType.name,
     'present':  present,
   };
 }
 
 // ─────────────────────────────────────────────
-// lib/models/payment_model.dart
-
+// PaymentModel — uses daysWorked + dailyRate
+// ─────────────────────────────────────────────
 enum PaymentStatus { pending, paid }
 
 class PaymentModel {
@@ -202,10 +244,10 @@ class PaymentModel {
   final String workerId;
   final String workerName;
   final String jobId;
-  final String jobTitle;
-  final int daysWorked;
+  final String jobLabel;   // "ClientName · dd/MM/yyyy"
+  final double daysWorked; // can be 0.5, 1.0, 1.5 etc
   final double dailyRate;
-  final double totalAmount;
+  final double totalAmount; // daysWorked × dailyRate
   final PaymentStatus status;
   final DateTime periodStart;
   final DateTime periodEnd;
@@ -216,7 +258,7 @@ class PaymentModel {
     required this.workerId,
     required this.workerName,
     required this.jobId,
-    required this.jobTitle,
+    required this.jobLabel,
     required this.daysWorked,
     required this.dailyRate,
     required this.totalAmount,
@@ -233,8 +275,8 @@ class PaymentModel {
       workerId:    d['workerId']    ?? '',
       workerName:  d['workerName']  ?? '',
       jobId:       d['jobId']       ?? '',
-      jobTitle:    d['jobTitle']    ?? '',
-      daysWorked:  d['daysWorked']  ?? 0,
+      jobLabel:    d['jobLabel']    ?? '',
+      daysWorked:  (d['daysWorked'] ?? 0).toDouble(),
       dailyRate:   (d['dailyRate']  ?? 0).toDouble(),
       totalAmount: (d['totalAmount']?? 0).toDouble(),
       status: PaymentStatus.values.firstWhere(
@@ -253,7 +295,7 @@ class PaymentModel {
     'workerId':    workerId,
     'workerName':  workerName,
     'jobId':       jobId,
-    'jobTitle':    jobTitle,
+    'jobLabel':    jobLabel,
     'daysWorked':  daysWorked,
     'dailyRate':   dailyRate,
     'totalAmount': totalAmount,
