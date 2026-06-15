@@ -14,6 +14,15 @@ class FirestoreService {
       .orderBy('createdAt', descending: true)
       .snapshots()
       .map((s) => s.docs.map((d) => WorkerModel.fromFirestore(d)).toList());
+  Stream<List<WorkerModel>> workersJobs() => _workers
+      .orderBy('createdAt', descending: true)
+      .where("isActive",isEqualTo: true)
+      .snapshots()
+      .map((s) => s.docs.map((d) => WorkerModel.fromFirestore(d)).toList());
+
+  Stream<List<AttendanceModel>> watchAllAttendance() => _attendance
+      .snapshots()
+      .map((s) => s.docs.map((d) => AttendanceModel.fromFirestore(d)).toList());
 
   Future<void> addWorker(WorkerModel w)    => _workers.doc(w.id).set(w.toMap());
   Future<void> updateWorker(WorkerModel w) => _workers.doc(w.id).update(w.toMap());
@@ -130,7 +139,7 @@ class FirestoreService {
   // ═══════════════════════════════════════
   //  PAYMENTS  (days × dailyRate)
   // ═══════════════════════════════════════
-  CollectionReference get _payments => _db.collection('payments');
+  CollectionReference get _payments => _db.collection('manual_payments');
 
   Stream<List<PaymentModel>> watchPayments() => _payments
       .orderBy('periodEnd', descending: true)
@@ -195,19 +204,28 @@ class FirestoreService {
     final clients = await _clients.get();
     final pending = await _payments
         .where('status', isEqualTo: 'pending').get();
-    final paid    = await _payments
-        .where('status', isEqualTo: 'paid').get();
+    final paid = await _payments.get();
+    final allAmount = await _attendance.get();
+  
 
     double totalPending = 0;
     double totalPaid    = 0;
 
-    for (final doc in pending.docs) {
-      totalPending +=
-          ((doc.data() as Map)['totalAmount'] ?? 0).toDouble();
-    }
+    // for (final doc in pending.docs) {
+    //   totalPending +=
+    //       ((doc.data() as Map)['totalAmount'] ?? 0).toDouble();
+    // }
     for (final doc in paid.docs) {
       totalPaid +=
-          ((doc.data() as Map)['totalAmount'] ?? 0).toDouble();
+          ((doc.data() as Map)['amount'] ?? 0).toDouble();
+    }
+    for(final doc in allAmount.docs){
+      final workerId = (doc.data() as Map)['workerId'];
+      final dayType = (doc.data() as Map)['dayType'];
+      final worker = await getWorker(workerId);
+      final payByDay = worker?.dailyRate;
+      final pay = dayType == "fullDay" ?  1 : dayType == "halfDay" ?  0.5 : 1.5;
+      totalPending += (payByDay ?? 0) * pay;
     }
 
     return {
@@ -216,9 +234,9 @@ class FirestoreService {
           .length,
       'totalWorkers':  workers.docs.length,
       'totalClients':  clients.docs.length,
-      'totalPending':  totalPending,
+      'totalPending':  totalPending - totalPaid,
       'totalPaid':     totalPaid,
-      'totalEarnings': totalPending + totalPaid,
+      'totalEarnings': totalPending,
     };
   }
 }

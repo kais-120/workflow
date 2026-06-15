@@ -1,4 +1,6 @@
 // lib/screens/dashboard/dashboard_screen.dart
+import 'package:elecpro/screens/checkin/checkin_list_screen.dart';
+import 'package:elecpro/screens/checkin/checkin_screen_2.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -31,6 +33,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
       const _HomeTab(),
       const WorkersScreen(standalone: false),
       const ClientsScreen(standalone: false),
+      const CheckinListScreen(standalone: false),
       const PayScreen(standalone: false),
     ];
   }

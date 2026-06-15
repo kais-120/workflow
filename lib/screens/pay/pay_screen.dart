@@ -105,35 +105,38 @@ Stream<_WorkerSummary> _workerSummaryStream(WorkerModel worker) {
 // We also need a combined stream that reacts to payment changes.
 // Use a StreamBuilder for payments nested inside attendance stream.
 Stream<_WorkerSummary> _workerSummaryStreamFull(WorkerModel worker) {
-  // Listen to manual_payments changes → recompute everything
   return FirebaseFirestore.instance
-      .collection('manual_payments')
+      .collection('attendance')
       .where('workerId', isEqualTo: worker.id)
+      .where('present', isEqualTo: true)
       .snapshots()
-      .asyncMap((paySnap) async {
-    double totalPaid = 0;
-    for (final doc in paySnap.docs) {
-      totalPaid += ((doc.data())['amount'] ?? 0).toDouble();
-    }
-
-    final attSnap = await FirebaseFirestore.instance
-        .collection('attendance')
-        .where('workerId', isEqualTo: worker.id)
-        .where('present', isEqualTo: true)
-        .get();
+      .asyncMap((attSnap) async {
 
     double totalDays = 0;
+
     for (final doc in attSnap.docs) {
       final a = AttendanceModel.fromFirestore(doc);
       totalDays += a.daysValue;
     }
 
+    final paySnap = await FirebaseFirestore.instance
+        .collection('manual_payments')
+        .where('workerId', isEqualTo: worker.id)
+        .get();
+
+    double totalPaid = 0;
+
+    for (final doc in paySnap.docs) {
+      totalPaid += ((doc.data())['amount'] ?? 0).toDouble();
+    }
+
     final totalEarned = totalDays * worker.dailyRate;
+
     return _WorkerSummary(
-      totalDays:   totalDays,
+      totalDays: totalDays,
       totalEarned: totalEarned,
-      totalPaid:   totalPaid,
-      remaining:   totalEarned - totalPaid,
+      totalPaid: totalPaid,
+      remaining: totalEarned - totalPaid,
     );
   });
 }

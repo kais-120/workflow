@@ -43,6 +43,8 @@ class _JobFormScreenState extends State<JobFormScreen> {
       _selectedWorkerIds.addAll(j.workerIds);
     } else {
       _addressCtrl.text = widget.client.address;
+      final now = DateTime.now();
+      _titleCtrl.text = DateFormat('EEEE dd/MM/yyyy HH:mm').format(now);
     }
   }
 
@@ -268,7 +270,7 @@ class _JobFormScreenState extends State<JobFormScreen> {
                 const SizedBox(height: 10),
 
                 StreamBuilder<List<WorkerModel>>(
-                  stream: fs.watchWorkers(),
+                  stream: fs.workersJobs(),
                   builder: (_, snap) {
                     final workers = snap.data ?? [];
                     if (workers.isEmpty) {
@@ -433,7 +435,6 @@ class _WorkerSelectRow extends StatelessWidget {
                           : AppColors.textSecondary,
                     )),
                 const SizedBox(height: 2),
-                // ✅ FIXED: dailyRate
                 Text(
                   '${worker.role}  ·  '
                   '${worker.dailyRate.toStringAsFixed(0)} DT/day',
